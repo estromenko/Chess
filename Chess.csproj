@@ -9,11 +9,17 @@
   <ItemGroup>
     <PackageReference Include="dotenv.net" Version="3.1.1" />
     <PackageReference Include="IdentityModel" Version="6.0.0" />
+    <PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.2.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.16.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="6.0.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.2.3" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.16.0" />
   </ItemGroup>

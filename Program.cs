@@ -5,12 +5,16 @@ using Chess.Databases;
 using Chess.Services;
 using dotenv.net;
 
-DotEnv.Load();
+DotEnv.Load(new DotEnvOptions(
+    envFilePaths: new string[] { ".env.sample", ".env", }
+));
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton(typeof(AuthService), new AuthService());
 builder.Services.AddSingleton(typeof(MainContext), new MainContext());
+
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -18,13 +22,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidateAudience = true,
             ValidateLifetime = true,
+            ValidateAudience = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
+            ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha256 },
             ValidAudience = Environment.GetEnvironmentVariable("JWT_ISSUER"),
+            ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY")!))
+                Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY")!)),
         };
     });
 
@@ -38,19 +43,20 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
 app.UseCors(x => x
-        .WithOrigins("https://localhost:3000")
+        .WithOrigins(Environment.GetEnvironmentVariable("CORS_ORIGINS")!)
         .AllowCredentials()
         .AllowAnyMethod()
         .AllowAnyHeader());
 
-app.MapControllers();
-
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapControllers();
 
 app.Run();

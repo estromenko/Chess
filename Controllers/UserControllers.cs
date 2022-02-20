@@ -10,6 +10,7 @@ namespace Chess.Controllers;
 [Route("users")]
 public class UserController : ControllerBase
 {
+    private ILogger logger;
     private MainContext db;
     private AuthService authService;
 
@@ -19,16 +20,9 @@ public class UserController : ControllerBase
         public string Password;
     }
 
-    public struct RegisterUserRequest
+    public UserController(MainContext _db, AuthService _authService, ILogger<User> _logger)
     {
-        public string Email;
-        public string Username;
-        public string Password;
-        public string Password2;
-    }
-
-    public UserController(MainContext _db, AuthService _authService)
-    {
+        logger = _logger;
         db = _db;
         authService = _authService;
     }
@@ -41,17 +35,27 @@ public class UserController : ControllerBase
     }
 
     [HttpPost("/users/registration", Name = "RegisterUser")]
-    public ActionResult RegisterUser(RegisterUserRequest request)
+    public ActionResult RegisterUser(User userData)
     {
         try
         {
-            if (request.Password != request.Password2)
+            if (!ModelState.IsValid)
             {
-                return BadRequest(new { error = "Passwords do not match" });
+                return BadRequest(new { errors = ModelState.Values.SelectMany(v => v.Errors).ToArray() });
             }
 
-            User user = new User(0, request.Email, request.Username, request.Password);
+            Array existentUser = db.Users.Where(u => u.Email == userData.Email).ToArray();
+            if (existentUser.Length > 0)
+            {
+                return BadRequest(new { message = "Such user already exists" });
+            }
 
+            User user = new User(userData.Email, userData.Username, userData.Password);
+
+            string hashedPassword = authService.HashPassword(user.Password);
+            user.Password = hashedPassword;
+
+            db.ChangeTracker.Clear();
             db.Users.Add(user);
             db.SaveChanges();
 
@@ -59,9 +63,10 @@ public class UserController : ControllerBase
 
             return Ok(new { token = token });
         }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException e)
         {
-            return BadRequest();
+            logger.LogWarning(e.InnerException!.Message, userData.Email);
+            return BadRequest(new { message = $"User with such email ({userData.Email}) already exists" });
         }
     }
 
@@ -70,7 +75,13 @@ public class UserController : ControllerBase
     {
         try
         {
-            User existentUser = db.Users.Single(u => u.Email == request.Email && u.Password == request.Password);
+            string hashedPassword = authService.HashPassword(request.Password);
+            User existentUser = db.Users.Single(u => u.Email == request.Email);
+
+            if (existentUser.Password != hashedPassword)
+            {
+                return BadRequest(new { message = "Wrong email or password" });
+            }
 
             string token = authService.GenerateToken(existentUser.Username);
 
@@ -78,7 +89,8 @@ public class UserController : ControllerBase
         }
         catch (InvalidOperationException e)
         {
-            return BadRequest(new { error = "Wrong email or password", message = e.ToString() });
+            logger.LogTrace(e.InnerException!.Message);
+            return BadRequest(new { message = "Wrong email or password" });
         }
     }
 

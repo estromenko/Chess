@@ -13,10 +13,22 @@ public class MainContext : DbContext
     [NotNull]
     public DbSet<User>? Users { get; set; }
 
-    public MainContext()
-    {
-        Database.EnsureCreated();
-    }
+    [NotNull]
+    public DbSet<Match>? Matches { get; set; }
+
+    [NotNull]
+    public DbSet<Tournament>? Tournaments { get; set; }
+
+    [NotNull]
+    public DbSet<UsersTournaments>? UsersTournaments { get; set; }
+
+    [NotNull]
+    public DbSet<Club>? Clubs { get; set; }
+
+    [NotNull]
+    public DbSet<UsersClubs>? UsersClubs { get; set; }
+
+    public MainContext() { }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
